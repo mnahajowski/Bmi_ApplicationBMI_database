@@ -1,5 +1,6 @@
 package pl.pwr.andz1.i00000.bmi
 
+import pl.pwr.andz1.i00000.Database.BmiResultObject
 import java.io.Serializable
 
 const val MAXIMUM_LIST_SIZE = 10

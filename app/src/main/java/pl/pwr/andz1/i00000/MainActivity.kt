@@ -5,18 +5,23 @@ import android.content.Intent
 import android.graphics.Color
 import android.icu.util.Calendar
 import android.os.Bundle
+import android.util.Log
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import pl.pwr.andz1.i00000.bmi.BmiForCmKg
-import pl.pwr.andz1.i00000.bmi.BmiForInchLb
-import pl.pwr.andz1.i00000.bmi.BmiHistory
-import pl.pwr.andz1.i00000.bmi.BmiResultObject
+import kotlinx.coroutines.launch
+import pl.pwr.andz1.i00000.Database.BmiDatabase
+import pl.pwr.andz1.i00000.Database.BmiDatabaseDao
+import pl.pwr.andz1.i00000.Database.BmiResultObject
+import pl.pwr.andz1.i00000.bmi.*
 import pl.pwr.andz1.i00000.databinding.ActivityMainBinding
 
 const val RESULTS_SHARED_KEY = "result_history"
@@ -32,27 +37,13 @@ const val BMI_VALUE_INTENT_KEY = "bmiValue"
 class MainActivity : AppCompatActivity() {
 
     lateinit var binding: ActivityMainBinding
-    var last10history = BmiHistory()
-
+    lateinit var database: BmiDatabaseDao
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        val sharedPreferences = getSharedPreferences(SHARED_PREFERENCES_STRING, MODE_PRIVATE)
-        val gson = Gson()
-        val json = sharedPreferences.getString(RESULTS_SHARED_KEY, null)
-
-        val myType = object : TypeToken<ArrayList<BmiResultObject>>() {}.type
-        val savedHistory = gson.fromJson<ArrayList<BmiResultObject>>(json, myType)
-
-        if(savedHistory == null) {
-            last10history = BmiHistory()
-        }
-        else {
-            last10history.set(savedHistory)
-        }
+        database = BmiDatabase.getInstance(application).bmiDatabaseDao
 
     }
 
@@ -99,12 +90,19 @@ class MainActivity : AppCompatActivity() {
                     unit = getString(R.string.polish_units_string)
                 else
                     unit = getString(R.string.english_units_string)
-                last10history.add(BmiResultObject(bmiTV.text.toString().toDouble(), heightET.text.toString().toInt(),
-                        massET.text.toString().toInt(), unit, Calendar.getInstance().time))
+
+                lifecycleScope.launch {
+                    insertData(BmiResultObject(bmi_result = bmiTV.text.toString().toDouble(), height = heightET.text.toString().toInt(),
+                            weight = massET.text.toString().toInt(), unit = unit))
+                }
             } else {
                 bmiTV.visibility = View.INVISIBLE
             }
         }
+    }
+
+    private suspend fun insertData(bmiResult : BmiResultObject) {
+        database.insert(bmiResult)
     }
 
     fun checkPolishValues() {
@@ -177,22 +175,6 @@ class MainActivity : AppCompatActivity() {
 
     fun ShowHistory(v: View?) {
         val intent = Intent(this, HistoryActivity::class.java)
-        val args = Bundle()
-        args.putSerializable(LAST_10_HISTORY_LIST_SERIALIZABLE_KEY, last10history)
-        intent.putExtra(LAST_10_HISTORY_LIST_INTENT_KEY, args)
         startActivity(intent)
     }
-
-    override fun onPause() {
-        super.onPause()
-        val sharedPreferences = getSharedPreferences(SHARED_PREFERENCES_STRING, MODE_PRIVATE)
-        val editor = sharedPreferences.edit()
-        val gson = Gson()
-        val json: String = gson.toJson(last10history.get())
-        editor.putString(RESULTS_SHARED_KEY, json)
-        editor.apply()
-    }
-
-
-
 }
