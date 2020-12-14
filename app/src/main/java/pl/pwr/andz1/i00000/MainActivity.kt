@@ -24,11 +24,7 @@ import pl.pwr.andz1.i00000.Database.BmiResultObject
 import pl.pwr.andz1.i00000.bmi.*
 import pl.pwr.andz1.i00000.databinding.ActivityMainBinding
 
-const val RESULTS_SHARED_KEY = "result_history"
-const val SHARED_PREFERENCES_STRING = "shared preferences"
 const val BMI_SAVED_VALUE = "bmi_value"
-const val LAST_10_HISTORY_LIST_SERIALIZABLE_KEY = "mytext"
-const val LAST_10_HISTORY_LIST_INTENT_KEY = "Bundle"
 const val BMI_VALUE_INTENT_KEY = "bmiValue"
 
 //246711_Marcin_Nahajowski
